@@ -8,6 +8,8 @@ from django.conf import settings
 import logging
 from .pythonformatters import AddFormatFieldsMixin, PythonFormatter, PythonStdOutWriter
 
+logger = logging.getLogger(__name__)
+
 JSON_SERIALIZER_NAME = "jsonextra"
 
 class JsonFormatter(PythonFormatter):
@@ -46,12 +48,12 @@ class JsonLoggerWriter(PythonStdOutWriter):
     """ Default JSON writer that outputs formatted object to logger
     """
     def __init__(self):
-        logging.basicConfig(level = logging.INFO)
+        #logging.basicConfig(level = logging.INFO)
         
     def write(self, key, formatted_obj):
         instance = formatted_obj.get('instance')
         if instance is not None:
-            logging.info("Key: {}; Serialized objects: {}".format(key, instance))
+            logger.debug("Key: {}; Serialized objects: {}".format(key, instance))
         else:
             raise Exception("No instance provided to write")
 
