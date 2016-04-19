@@ -48,6 +48,7 @@ class JsonLoggerWriter(PythonStdOutWriter):
     """ Default JSON writer that outputs formatted object to logger
     """
     def __init__(self):
+        pass
         #logging.basicConfig(level = logging.INFO)
         
     def write(self, key, formatted_obj):
