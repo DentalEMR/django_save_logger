@@ -52,7 +52,7 @@ class ArchverJsonFormatterUnitTests(TestCase):
             time.sleep(5)
             self.child = Child.objects.create(parent = self.parent)
             outputOut = out.getvalue().strip()
-            self.assertEqual(outputOut, 'Key: 1; Serialized objects: [{"fields": {"char_field": "Parent CharField contents."}, "model": "tests.parent", "op": "CREATE", "db_alias": "default", "pk": 1}]\nKey: 1; Serialized objects: [{"fields": {"decimal_field": 3.434, "char_field": "Child CharField contents.", "parent": 1, "text_field": "Child TextField contents.", "date_field": "' + self.child.date_field.isoformat()[:23] + '"}, "model": "tests.child", "op": "CREATE", "db_alias": "default", "pk": 1}]')
+            self.assertEqual(outputOut, 'Key: 1; Serialized objects: [{"fields": {"created_at": "' + self.parent.created_at.isoformat() + '", "char_field": "Parent CharField contents."}, "model": "tests.parent", "op": "CREATE", "db_alias": "default", "pk": 1}]\nKey: 1; Serialized objects: [{"fields": {"decimal_field": 3.434, "char_field": "Child CharField contents.", "parent": 1, "text_field": "Child TextField contents.", "date_field": "' + self.child.date_field.isoformat()[:23] + '"}, "model": "tests.child", "op": "CREATE", "db_alias": "default", "pk": 1}]')
         print("\nArchiver's Child's date_field is: {}. Should be different from output from QueuedArchiver output's child's date_field.\n".format(self.child.date_field.isoformat()[:23]))
 
 class QueuedArchiverJsonFormatterUnitTests(TestCase):
@@ -85,7 +85,7 @@ class ArchverPythonFormatterUnitTests(TestCase):
             time.sleep(5)
             self.child = Child.objects.create(parent = self.parent)
             outputOut = out.getvalue().strip()
-            self.assertEqual(outputOut, "Key: 2; Serialized objects: [{u'fields': {'char_field': u'Parent CharField contents.'}, u'model': u'tests.parent', 'op': 'CREATE', 'db_alias': 'default', u'pk': 2}]\nKey: 2; Serialized objects: [{u'fields': {'decimal_field': 3.434, 'char_field': u'Child CharField contents.', 'parent': 2, 'text_field': u'Child TextField contents.', 'date_field': " + repr(self.child.date_field) + "}, u'model': u'tests.child', 'op': 'CREATE', 'db_alias': 'default', u'pk': 2}]")
+            self.assertEqual(outputOut, "Key: 2; Serialized objects: [{u'fields': {'created_at': " + repr(self.parent.created_at) + ", 'char_field': u'Parent CharField contents.'}, u'model': u'tests.parent', 'op': 'CREATE', 'db_alias': 'default', u'pk': 2}]\nKey: 2; Serialized objects: [{u'fields': {'decimal_field': 3.434, 'char_field': u'Child CharField contents.', 'parent': 2, 'text_field': u'Child TextField contents.', 'date_field': " + repr(self.child.date_field) + "}, u'model': u'tests.child', 'op': 'CREATE', 'db_alias': 'default', u'pk': 2}]")
 
         print("\nArchiver's Child's date_field is: {}. Should be different from output from QueuedArchiver output's child's date_field.\n".format(self.child.date_field.isoformat()[:23]))
 
@@ -125,5 +125,5 @@ class MongoArchiverUnitTests(TestCase):
 
         for record in self.collection.find():
             del record['_id']
-            self.assertEqual(str(record), "{u'db_alias': u'default', u'fields': {u'char_field': u'Parent CharField contents.'}, u'pk': 3, u'model': u'tests.parent', u'op': u'CREATE'}")
+            self.assertEqual(str(record), "{u'db_alias': u'default', u'fields': {u'created_at': " + repr(parent.created_at) + ", u'char_field': u'Parent CharField contents.'}, u'pk': 3, u'model': u'tests.parent', u'op': u'CREATE'}")
 
