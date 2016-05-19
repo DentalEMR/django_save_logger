@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-
+from datetime import date, datetime
 from django.core import serializers
 from django.core.serializers.python import Serializer as PythonSerializer
 from django.conf import settings
@@ -34,6 +34,11 @@ class PythonFormatter(BaseFormatter):
             #add two extra properties, serialize using enhanced serializer, then delete the properties.
             instance._op = op
             instance._db_alias = db_alias
+
+            for attr, val in vars(instance).iteritems():
+                if isinstance(val, date):
+                    instance.__setattr__(attr, datetime.combine(val, datetime.min.time()))
+
             # will use the natural_key() method to serialize any foreign key reference to objects of the type that defines the method
             # https://docs.djangoproject.com/en/1.7/topics/serialization/#serialization-of-natural-keys
             serializedinstance = serializers.serialize(self.get_serializer_name(), [instance,], use_natural_foreign_keys=True)

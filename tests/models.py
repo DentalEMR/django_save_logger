@@ -2,6 +2,7 @@ from django.db import models
 
 class Parent(models.Model):
     char_field = models.CharField(max_length = 50, default = 'Parent CharField contents.')
+    created_at = models.DateField(auto_now_add=True)
 
 class Child(models.Model):
     char_field = models.CharField(max_length=50, default = 'Child CharField contents.', unique=True)
