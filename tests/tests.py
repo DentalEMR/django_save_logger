@@ -10,6 +10,7 @@ from pymongo import MongoClient
 #from writers.mongo import MongoWriter
 #import threading
 import time
+import datetime
 import sys
 from StringIO import StringIO
 import subprocess
@@ -42,6 +43,8 @@ class ArchverJsonFormatterUnitTests(TestCase):
     def setUp(self):
         self.archiver = Archiver(writer=JsonStdOutWriter(), formatter=JsonFormatter())
         self.archiver.connect_models()
+        self.date = datetime.date.today()
+        self.datetime = datetime.datetime.now()
 
     def tearDown(self):
        self.archiver.destroy()
@@ -50,15 +53,16 @@ class ArchverJsonFormatterUnitTests(TestCase):
         with capture_output() as (out, err):
             self.parent = Parent.objects.create()
             time.sleep(5)
-            self.child = Child.objects.create(parent = self.parent)
+            self.child = Child.objects.create(parent = self.parent, date_field=self.date, datetime_field=self.datetime)
             outputOut = out.getvalue().strip()
-            self.assertEqual(outputOut, 'Key: 1; Serialized objects: [{"fields": {"created_at": "' + self.parent.created_at.isoformat() + '", "char_field": "Parent CharField contents."}, "model": "tests.parent", "op": "CREATE", "db_alias": "default", "pk": 1}]\nKey: 1; Serialized objects: [{"fields": {"decimal_field": 3.434, "char_field": "Child CharField contents.", "parent": 1, "text_field": "Child TextField contents.", "date_field": "' + self.child.date_field.isoformat()[:23] + '"}, "model": "tests.child", "op": "CREATE", "db_alias": "default", "pk": 1}]')
-        print("\nArchiver's Child's date_field is: {}. Should be different from output from QueuedArchiver output's child's date_field.\n".format(self.child.date_field.isoformat()[:23]))
+            self.assertEqual(outputOut, 'Key: 1; Serialized objects: [{"fields": {"char_field": "Parent CharField contents."}, "model": "tests.parent", "op": "CREATE", "db_alias": "default", "pk": 1}]\nKey: 1; Serialized objects: [{"fields": {"parent": 1, "char_field": "Child CharField contents.", "datetime_field": "' + self.datetime.isoformat()[:23] + '", "decimal_field": 3.434, "date_field": "' + datetime.datetime.combine(self.date, datetime.datetime.min.time()).isoformat()[:23] + '", "text_field": "Child TextField contents."}, "model": "tests.child", "op": "CREATE", "db_alias": "default", "pk": 1}]')
 
 class QueuedArchiverJsonFormatterUnitTests(TestCase):
     def setUp(self):
         self.archiver = QueuedArchiver(writer=JsonStdOutWriter(), formatter=JsonFormatter())
         self.archiver.connect_models()
+        self.date = datetime.date.today()
+        self.datetime = datetime.datetime.now()
 
 
     def tearDown(self):
@@ -67,7 +71,7 @@ class QueuedArchiverJsonFormatterUnitTests(TestCase):
     def test_archiver_write(self):
         self.parent = Parent.objects.create()
         time.sleep(5)
-        self.child = Child.objects.create(parent = self.parent)
+        self.child = Child.objects.create(parent = self.parent, date_field=self.date, datetime_field=self.datetime)
         self.archiver.destroy()
 
 
@@ -75,6 +79,8 @@ class ArchverPythonFormatterUnitTests(TestCase):
     def setUp(self):
         self.archiver = Archiver(writer=PythonStdOutWriter(), formatter=PythonFormatter())
         self.archiver.connect_models()
+        self.date = datetime.date.today()
+        self.datetime = datetime.datetime.now()
 
     def tearDown(self):
        self.archiver.destroy()
@@ -83,16 +89,18 @@ class ArchverPythonFormatterUnitTests(TestCase):
         with capture_output() as (out, err):
             self.parent = Parent.objects.create()
             time.sleep(5)
-            self.child = Child.objects.create(parent = self.parent)
+            self.child = Child.objects.create(parent = self.parent, date_field=self.date, datetime_field=self.datetime)
             outputOut = out.getvalue().strip()
-            self.assertEqual(outputOut, "Key: 2; Serialized objects: [{u'fields': {'created_at': " + repr(self.parent.created_at) + ", 'char_field': u'Parent CharField contents.'}, u'model': u'tests.parent', 'op': 'CREATE', 'db_alias': 'default', u'pk': 2}]\nKey: 2; Serialized objects: [{u'fields': {'decimal_field': 3.434, 'char_field': u'Child CharField contents.', 'parent': 2, 'text_field': u'Child TextField contents.', 'date_field': " + repr(self.child.date_field) + "}, u'model': u'tests.child', 'op': 'CREATE', 'db_alias': 'default', u'pk': 2}]")
+            self.assertEqual(outputOut, "Key: 2; Serialized objects: [{u'fields': {'char_field': u'Parent CharField contents.'}, u'model': u'tests.parent', 'op': 'CREATE', 'db_alias': 'default', u'pk': 2}]\nKey: 2; Serialized objects: [{u'fields': {'parent': 2, 'char_field': u'Child CharField contents.', 'datetime_field': " + repr(self.datetime) + ", 'decimal_field': 3.434, 'date_field': " + repr(datetime.datetime.combine(self.date, datetime.datetime.min.time())) + ", 'text_field': u'Child TextField contents.'}, u'model': u'tests.child', 'op': 'CREATE', 'db_alias': 'default', u'pk': 2}]")
 
-        print("\nArchiver's Child's date_field is: {}. Should be different from output from QueuedArchiver output's child's date_field.\n".format(self.child.date_field.isoformat()[:23]))
+
 
 class QueuedArchiverPythonFormatterUnitTests(TestCase):
     def setUp(self):
         self.archiver = QueuedArchiver(writer=PythonStdOutWriter(), formatter=PythonFormatter())
         self.archiver.connect_models()
+        self.date = datetime.date.today()
+        self.datetime = datetime.datetime.now()
 
 
     def tearDown(self):
@@ -101,18 +109,19 @@ class QueuedArchiverPythonFormatterUnitTests(TestCase):
     def test_archiver_write(self):
         parent = Parent.objects.create()
         time.sleep(5)
-        child = Child.objects.create(parent = parent)
+        self.child = Child.objects.create(parent = parent, date_field=self.date, datetime_field=self.datetime)
         self.archiver.destroy()
 
 
 class MongoArchiverUnitTests(TestCase):
     def setUp(self):
         self.client = MongoClient(URL, PORT)
-        db = self.client[MONGO_DB]
-        self.collection = db['tests.parent']
+        self.db = self.client[MONGO_DB]
 
         self.archiver = QueuedArchiver(writer=MongoWriter(), formatter=PythonFormatter())
         self.archiver.connect_models()
+        self.date = datetime.date.today()
+        self.datetime = datetime.datetime.now()
 
 
     def tearDown(self):
@@ -121,9 +130,19 @@ class MongoArchiverUnitTests(TestCase):
 
     def test_archiver_write(self):
         parent = Parent.objects.create()
+        child = Child.objects.create(parent = parent, date_field=self.date, datetime_field=self.datetime)
         self.archiver.destroy()
 
-        for record in self.collection.find():
+        collection = self.db['tests.child']
+        for record in collection.find():
             del record['_id']
-            self.assertEqual(str(record), "{u'db_alias': u'default', u'fields': {u'created_at': " + repr(parent.created_at) + ", u'char_field': u'Parent CharField contents.'}, u'pk': 3, u'model': u'tests.parent', u'op': u'CREATE'}")
+            # Mongo appears to save datetime in resolution of milliseconds instead of microseconds.
+            datetime_to_millis = self.datetime.replace(microsecond = self.datetime.microsecond - (self.datetime.microsecond % 1000))
+            self.assertEqual(str(record), "{u'db_alias': u'default', u'fields': {u'parent': 3, u'char_field': u'Child CharField contents.', u'datetime_field': " + repr(datetime_to_millis) + ", u'decimal_field': 3.434, u'date_field': " + repr(datetime.datetime.combine(self.date, datetime.datetime.min.time())) + ", u'text_field': u'Child TextField contents.'}, u'pk': 3, u'model': u'tests.child', u'op': u'CREATE'}")
+
+        collection = self.db['tests.parent']
+        for record in collection.find():
+            del record['_id']
+            self.assertEqual(str(record), "{u'db_alias': u'default', u'fields': {u'char_field': u'Parent CharField contents.'}, u'pk': 3, u'model': u'tests.parent', u'op': u'CREATE'}")
+
 

@@ -34,9 +34,9 @@ class PythonFormatter(BaseFormatter):
             #add two extra properties, serialize using enhanced serializer, then delete the properties.
             instance._op = op
             instance._db_alias = db_alias
-
+            #PyMongo only supports datetime, not date (http://api.mongodb.com/python/current/faq.html#how-can-i-save-a-datetime-date-instance)
             for attr, val in vars(instance).iteritems():
-                if isinstance(val, date):
+                if type(val) is date:
                     instance.__setattr__(attr, datetime.combine(val, datetime.min.time()))
 
             # will use the natural_key() method to serialize any foreign key reference to objects of the type that defines the method
