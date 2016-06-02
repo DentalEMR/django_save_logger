@@ -6,7 +6,7 @@ from django.core.serializers.python import Serializer as PythonSerializer
 from django.conf import settings
 import logging
 from .archivers import BaseFormatter, BaseWriter
-
+from copy import deepcopy
 
 PYTHON_SERIALIZER_NAME = "pythonextra"
 
@@ -31,19 +31,20 @@ class PythonFormatter(BaseFormatter):
         adds in additional fields and returns the dictionary.
         """
         try:
+            inst_copy = deepcopy(instance)
             #add two extra properties, serialize using enhanced serializer, then delete the properties.
-            instance._op = op
-            instance._db_alias = db_alias
+            inst_copy._op = op
+            inst_copy._db_alias = db_alias
             #PyMongo only supports datetime, not date (http://api.mongodb.com/python/current/faq.html#how-can-i-save-a-datetime-date-instance)
-            for attr, val in vars(instance).iteritems():
+            for attr, val in vars(inst_copy).iteritems():
                 if type(val) is date:
-                    instance.__setattr__(attr, datetime.combine(val, datetime.min.time()))
+                    inst_copy.__setattr__(attr, datetime.combine(val, datetime.min.time()))
 
             # will use the natural_key() method to serialize any foreign key reference to objects of the type that defines the method
             # https://docs.djangoproject.com/en/1.7/topics/serialization/#serialization-of-natural-keys
-            serializedinstance = serializers.serialize(self.get_serializer_name(), [instance,], use_natural_foreign_keys=True)
-            del instance._op
-            del instance._db_alias
+            serializedinstance = serializers.serialize(self.get_serializer_name(), [inst_copy,], use_natural_foreign_keys=True)
+            del inst_copy._op
+            del inst_copy._db_alias
             return self.finalize_format_obj(serializedinstance)
         except Exception as ex:
             logging.error(ex)

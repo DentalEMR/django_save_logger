@@ -92,7 +92,7 @@ class ArchverPythonFormatterUnitTests(TestCase):
             self.child = Child.objects.create(parent = self.parent, date_field=self.date, datetime_field=self.datetime)
             outputOut = out.getvalue().strip()
             self.assertEqual(outputOut, "Key: 2; Serialized objects: [{u'fields': {'char_field': u'Parent CharField contents.'}, u'model': u'tests.parent', 'op': 'CREATE', 'db_alias': 'default', u'pk': 2}]\nKey: 2; Serialized objects: [{u'fields': {'parent': 2, 'char_field': u'Child CharField contents.', 'datetime_field': " + repr(self.datetime) + ", 'decimal_field': 3.434, 'date_field': " + repr(datetime.datetime.combine(self.date, datetime.datetime.min.time())) + ", 'text_field': u'Child TextField contents.'}, u'model': u'tests.child', 'op': 'CREATE', 'db_alias': 'default', u'pk': 2}]")
-
+            self.assertIs(type(self.child.date_field), datetime.date)   
 
 
 class QueuedArchiverPythonFormatterUnitTests(TestCase):
@@ -144,5 +144,3 @@ class MongoArchiverUnitTests(TestCase):
         for record in collection.find():
             del record['_id']
             self.assertEqual(str(record), "{u'db_alias': u'default', u'fields': {u'char_field': u'Parent CharField contents.'}, u'pk': 3, u'model': u'tests.parent', u'op': u'CREATE'}")
-
-
