@@ -1,10 +1,15 @@
-from django.test import TestCase
+from django.test import TestCase, RequestFactory
+from django.contrib.sessions.backends.db import SessionStore
 from .models import Parent, Child
 from django_save_logger.archivers import Archiver, QueuedArchiver
 from django_save_logger.jsonformatters import JsonStdOutWriter, JsonFormatter
 from django_save_logger.pythonformatters import PythonStdOutWriter, PythonFormatter
 from django_save_logger.writers.mongo import MongoWriter, URL, PORT, MONGO_DB
+from django.contrib.auth.models import User
+from django.contrib.auth import login, logout, authenticate
 from pymongo import MongoClient
+
+from django_save_logger.monitors import LoginMonitor
 
 #from writers.s3 import BotoWriter
 #from writers.mongo import MongoWriter
@@ -144,3 +149,76 @@ class MongoArchiverUnitTests(TestCase):
         for record in collection.find():
             del record['_id']
             self.assertEqual(str(record), "{u'db_alias': u'default', u'fields': {u'char_field': u'Parent CharField contents.'}, u'pk': 3, u'model': u'tests.parent', u'op': u'CREATE'}")
+
+
+
+
+class LoginMonitorTests(TestCase):
+    def setUp(self):
+      self.logger = logging.getLogger('django_save_logger.monitors')
+      self.stream = StringIO()
+      self.handler = logging.StreamHandler(self.stream)
+      self.logger.addHandler(self.handler)
+      self.logger.setLevel(logging.INFO)
+
+      self.factory = RequestFactory()
+      self.user = User.objects.create_user('billy', 'billy@dentalemr.com', 'password123')
+
+
+    def tearDown(self):
+      self.login_monitor.destroy()
+      self.logger.removeHandler(self.handler)
+
+    def create_session_store():
+      engine = import_module(settings.SESSION_ENGINE)
+      store = engine.SessionStore()
+      store.save()
+      return store
+
+    def test_successful_login_logout(self):
+      self.login_monitor = LoginMonitor().connect()
+      request = self.factory.get('/login')
+      request.session = SessionStore()
+      user_ = authenticate(username='billy', password='password123')
+      self.assertIsNotNone(user_)
+      login(request, user_)
+      request.user = user_
+      logout(request)
+      self.assertEqual(
+        self.stream.getvalue(), 
+        'Logged in: pk: 2, username: billy\nLogged out: pk: 2, username: billy\n'
+      )
+
+    def test_successful_login_logout_with_extra_info(self):
+      self.login_monitor = LoginMonitor(
+        extra_user_attr_infos = [
+          {
+            'title': 'Email',
+            'attr': 'email'
+          }
+        ]
+      ).connect()
+
+      request = self.factory.get('/login')
+      request.session = SessionStore()
+      user_ = authenticate(username='billy', password='password123')
+      self.assertIsNotNone(user_)
+      login(request, user_)
+      request.user = user_
+      logout(request)
+      self.assertEqual(
+        self.stream.getvalue(), 
+        'Logged in: pk: 3, username: billy, Email: billy@dentalemr.com\nLogged out: pk: 3, username: billy, Email: billy@dentalemr.com\n'
+      )
+
+    def test_failed_login(self):
+      self.login_monitor = LoginMonitor().connect()
+      request = self.factory.get('/login')
+      request.session = SessionStore()
+      user = authenticate(username='jimmy', password='password123')
+      self.assertIsNone(user)
+      self.assertEqual(
+        self.stream.getvalue(), 
+        'Login failed: credentials: {"username": "jimmy", "password": "********************"}\n'
+      )
+
