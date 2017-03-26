@@ -35,8 +35,9 @@ class ApiCallEventMiddleware(object):
 
 
 class ApiCallEventPersistMiddleware(ApiCallEventMiddleware):
+  '''
+  rely on process_response for practice's to track api calls
   def process_request(self, request):
-    import pdb; pdb.set_trace()
     ret =  super(ApiCallEventPersistMiddleware, self).process_request(request)
     SystemEventModel.objects.create(
       type='request',
@@ -44,6 +45,7 @@ class ApiCallEventPersistMiddleware(ApiCallEventMiddleware):
       request_info=request_info(request),
     )
     return ret
+  '''
 
   def process_response(self, request, response):
     ret =  super(ApiCallEventPersistMiddleware, self).process_response(request, response)
@@ -55,6 +57,7 @@ class ApiCallEventPersistMiddleware(ApiCallEventMiddleware):
     )
     return ret
 
+  '''
   def process_exception(self, request, exception):
     ret = super(ApiCallEventPersistMiddleware, self).process_exception(request, exception)
     SystemEventModel.objects.create(
@@ -64,3 +67,4 @@ class ApiCallEventPersistMiddleware(ApiCallEventMiddleware):
       other_info = exception_info(exception)
     )
     return ret
+  '''
