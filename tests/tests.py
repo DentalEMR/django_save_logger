@@ -9,7 +9,8 @@ from django.contrib.auth.models import User
 from django.contrib.auth import login, logout, authenticate
 from pymongo import MongoClient
 
-from django_save_logger.monitors import LoginMonitor
+from django_save_logger.monitors import LoginEventMonitor, SystemEventModel, LoginEventPersistMonitor
+from django_save_logger.models import SystemEventModel
 
 #from writers.s3 import BotoWriter
 #from writers.mongo import MongoWriter
@@ -153,7 +154,7 @@ class MongoArchiverUnitTests(TestCase):
 
 
 
-class LoginMonitorTests(TestCase):
+class LoginEventMonitorTests(TestCase):
     def setUp(self):
       self.logger = logging.getLogger('django_save_logger.monitors')
       self.stream = StringIO()
@@ -176,7 +177,7 @@ class LoginMonitorTests(TestCase):
       return store
 
     def test_successful_login_logout(self):
-      self.login_monitor = LoginMonitor().connect()
+      self.login_monitor = LoginEventMonitor().connect()
       request = self.factory.get('/login')
       request.session = SessionStore()
       user_ = authenticate(username='billy', password='password123')
@@ -186,11 +187,11 @@ class LoginMonitorTests(TestCase):
       logout(request)
       self.assertEqual(
         self.stream.getvalue(), 
-        'Logged in: pk: 2, username: billy\nLogged out: pk: 2, username: billy\n'
+        'logged_in: pk: 2, username: billy, request info: {"HTTP_USER_AGENT": "", "REMOTE_ADDR": "127.0.0.1", "HTTP_CLIENT_IP": "", "path": "/login", "HTTP_FORWARDED_FOR": "", "HTTP_X_FORWARDED": "", "method": "GET", "HTTP_FORWARDED": ""}\nlogged_out: pk: 2, username: billy, request info: {"HTTP_USER_AGENT": "", "REMOTE_ADDR": "127.0.0.1", "HTTP_CLIENT_IP": "", "path": "/login", "HTTP_FORWARDED_FOR": "", "HTTP_X_FORWARDED": "", "method": "GET", "HTTP_FORWARDED": ""}\n'
       )
 
     def test_successful_login_logout_with_extra_info(self):
-      self.login_monitor = LoginMonitor(
+      self.login_monitor = LoginEventMonitor(
         extra_user_attr_infos = [
           {
             'title': 'Email',
@@ -208,17 +209,113 @@ class LoginMonitorTests(TestCase):
       logout(request)
       self.assertEqual(
         self.stream.getvalue(), 
-        'Logged in: pk: 3, username: billy, Email: billy@dentalemr.com\nLogged out: pk: 3, username: billy, Email: billy@dentalemr.com\n'
+        'logged_in: pk: 3, username: billy, request info: {"HTTP_USER_AGENT": "", "REMOTE_ADDR": "127.0.0.1", "HTTP_CLIENT_IP": "", "path": "/login", "HTTP_FORWARDED_FOR": "", "HTTP_X_FORWARDED": "", "method": "GET", "HTTP_FORWARDED": ""}, Email: billy@dentalemr.com\nlogged_out: pk: 3, username: billy, request info: {"HTTP_USER_AGENT": "", "REMOTE_ADDR": "127.0.0.1", "HTTP_CLIENT_IP": "", "path": "/login", "HTTP_FORWARDED_FOR": "", "HTTP_X_FORWARDED": "", "method": "GET", "HTTP_FORWARDED": ""}, Email: billy@dentalemr.com\n'
       )
 
     def test_failed_login(self):
-      self.login_monitor = LoginMonitor().connect()
+      self.login_monitor = LoginEventMonitor().connect()
       request = self.factory.get('/login')
       request.session = SessionStore()
       user = authenticate(username='jimmy', password='password123')
       self.assertIsNone(user)
       self.assertEqual(
         self.stream.getvalue(), 
-        'Login failed: credentials: {"username": "jimmy", "password": "********************"}\n'
+        'login_failed: pk: <no user>, username: <no user>, request info: None{"username": "jimmy", "password": "********************"}\n'
       )
 
+
+class LoginEventPersistMonitorTests(TestCase):
+    def setUp(self):
+      self.logger = logging.getLogger('django_save_logger.monitors')
+      self.stream = StringIO()
+      self.handler = logging.StreamHandler(self.stream)
+      self.logger.addHandler(self.handler)
+      self.logger.setLevel(logging.INFO)
+
+      self.factory = RequestFactory()
+      self.user = User.objects.create_user('billy', 'billy@dentalemr.com', 'password123')
+
+
+    def tearDown(self):
+      self.login_monitor.destroy()
+
+    def create_session_store():
+      engine = import_module(settings.SESSION_ENGINE)
+      store = engine.SessionStore()
+      store.save()
+      return store
+
+    def test_successful_login_logout(self):
+      self.login_monitor = LoginEventPersistMonitor().connect()
+      request = self.factory.get('/login')
+      request.session = SessionStore()
+      user_ = authenticate(username='billy', password='password123')
+      self.assertIsNotNone(user_)
+      login(request, user_)
+      request.user = user_
+      logout(request)
+      login_events = SystemEventModel.objects.all()
+      self.assertIsInstance(login_events[0], SystemEventModel)
+      self.assertEqual(login_events[0].type, 'logged_in')
+      self.assertEqual(
+        User.objects.get(pk = login_events[0].user_pk).username, 
+        'billy'
+      )
+      self.assertIsInstance(login_events[1], SystemEventModel)
+      self.assertEqual(login_events[1].type, 'logged_out')
+      self.assertEqual(
+        User.objects.get(pk = login_events[1].user_pk).username,
+        'billy'
+      )
+      self.assertEqual(
+        self.stream.getvalue(), 
+        'logged_in: pk: 5, username: billy, request info: {"HTTP_USER_AGENT": "", "REMOTE_ADDR": "127.0.0.1", "HTTP_CLIENT_IP": "", "path": "/login", "HTTP_FORWARDED_FOR": "", "HTTP_X_FORWARDED": "", "method": "GET", "HTTP_FORWARDED": ""}\nlogged_out: pk: 5, username: billy, request info: {"HTTP_USER_AGENT": "", "REMOTE_ADDR": "127.0.0.1", "HTTP_CLIENT_IP": "", "path": "/login", "HTTP_FORWARDED_FOR": "", "HTTP_X_FORWARDED": "", "method": "GET", "HTTP_FORWARDED": ""}\n'
+      )
+
+    def test_successful_login_logout_with_extra_info(self):
+      self.login_monitor = LoginEventPersistMonitor(
+        extra_user_attr_infos = [
+          {
+            'title': 'Email',
+            'attr': 'email'
+          }
+        ]
+      ).connect()
+
+      request = self.factory.get('/login')
+      request.session = SessionStore()
+      user_ = authenticate(username='billy', password='password123')
+      self.assertIsNotNone(user_)
+      login(request, user_)
+      request.user = user_
+      logout(request)
+      login_events = SystemEventModel.objects.all()
+      self.assertIsInstance(login_events[0], SystemEventModel)
+      self.assertEqual(login_events[0].type, 'logged_in')
+      self.assertEqual(
+        User.objects.get(pk = login_events[0].user_pk).username, 
+        'billy'
+      )
+      self.assertIsInstance(login_events[1], SystemEventModel)
+      self.assertEqual(login_events[1].type, 'logged_out')
+      self.assertEqual(
+        User.objects.get(pk = login_events[1].user_pk).username,
+        'billy'
+      )
+      self.assertEqual(
+        self.stream.getvalue(), 
+        'logged_in: pk: 6, username: billy, request info: {"HTTP_USER_AGENT": "", "REMOTE_ADDR": "127.0.0.1", "HTTP_CLIENT_IP": "", "path": "/login", "HTTP_FORWARDED_FOR": "", "HTTP_X_FORWARDED": "", "method": "GET", "HTTP_FORWARDED": ""}, Email: billy@dentalemr.com\nlogged_out: pk: 6, username: billy, request info: {"HTTP_USER_AGENT": "", "REMOTE_ADDR": "127.0.0.1", "HTTP_CLIENT_IP": "", "path": "/login", "HTTP_FORWARDED_FOR": "", "HTTP_X_FORWARDED": "", "method": "GET", "HTTP_FORWARDED": ""}, Email: billy@dentalemr.com\n'
+      )
+
+    def test_failed_login(self):
+      self.login_monitor = LoginEventPersistMonitor().connect()
+      request = self.factory.get('/login')
+      request.session = SessionStore()
+      user = authenticate(username='jimmy', password='password123')
+      self.assertIsNone(user)
+      login_events = SystemEventModel.objects.all()
+      self.assertEqual(login_events.count(), 1)
+      self.assertIsNone(login_events[0].user_pk)
+      self.assertEqual(login_events[0].other_info,
+        '{"username": "jimmy", "password": "********************"}'
+      )
