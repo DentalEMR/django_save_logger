@@ -1,33 +1,23 @@
-from django_save_logger.archivers import BaseWriter
+from __future__ import absolute_import
+
 from pymongo import MongoClient
 from django.conf import settings
 
-if hasattr(settings, 'MONGO_SERVER_URL'):
-    URL = settings.MONGO_SERVER_URL
-else:
-    URL = 'localhost'
+from ..archivers import BaseWriter
 
-if hasattr(settings, 'MONGO_SERVER_PORT'):
-    PORT = settings.MONGO_SERVER_PORT
-else:
-    PORT = 27017
-
-if hasattr(settings, 'MONGO_DB'):
-    MONGO_DB = settings.MONGO_DB
-else:
-    MONGO_DB = 'archive'
-
+MONGO_HOST = getattr(settings, "MONGO_HOST", "localhost")
+MONGO_PORT = getattr(settings, "MONGO_PORT", 27017)
+MONGO_DB = getattr(settings, "MONGO_DB", "archive")
 
 
 class MongoWriter(BaseWriter):
-    def __init__(self):
-        self.client = MongoClient(URL, PORT)
-        self.db = self.client[MONGO_DB]
+  def __init__(self, mongo_host=MONGO_HOST, mongo_port=MONGO_PORT, mongo_db=MONGO_DB):
+    self.client = MongoClient(mongo_host, mongo_port)
+    self.db = self.client[mongo_db]
 
-    def write(self, key, formatted_obj):
-        self.collection = self.db[formatted_obj[0]['model']]
-        self.collection.insert_many(formatted_obj)
+  def write(self, key, formatted_obj):
+    self.collection = self.db[formatted_obj[0]['model']]
+    self.collection.insert_many(formatted_obj)
 
-    def destroy(self):
-        pass
-
+  def destroy(self):
+    pass

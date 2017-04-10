@@ -1,19 +1,20 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser
+
+from model_utils import Choices
+
 
 class SystemEventModel(models.Model):
 
-  TYPES = (
-    ('logged_in', 'logged_in'),
-    ('logged_out', 'logged_out'),
-    ('login_failed', 'login_failed'),
-    ('request', 'request'),
-    ('response', 'response'),
-    ('response_exception', 'response_exception'),
+  TYPES = Choices(
+    (100, "request"),
+    (101, "response"),
+    (102, "response_exception"),
+    (200, "logged_in"),
+    (201, "logged_out"),
+    (202, "login_failed"),
   )
 
-  type            = models.CharField(max_length=100, choices=TYPES)
-  user_pk         = models.IntegerField(blank=True, null=True)
-  request_info    = models.TextField()
-  other_info      = models.TextField(null=True, blank=True) 
-
+  type = models.PositiveSmallIntegerField(choices=TYPES)
+  user_pk = models.IntegerField(blank=True, null=True)
+  request_info = models.TextField()
+  other_info = models.TextField(null=True, blank=True)
