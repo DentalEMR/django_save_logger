@@ -21,3 +21,8 @@ class SystemEventModel(models.Model):
   user_class = models.CharField(max_length=50, db_index=True)
   request_info = models.TextField()
   other_info = models.TextField(null=True, blank=True)
+
+  class Meta:
+    ordering = (
+      "created_at",
+    )
