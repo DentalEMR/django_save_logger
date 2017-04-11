@@ -74,17 +74,17 @@ class LoginEventMonitor(object):
 
   def connect(self):
     if not self.started:
-      user_logged_in.connect(self.logged_in, weak=False)
-      user_logged_out.connect(self.logged_out, weak=False)
-      user_login_failed.connect(self.login_failed, weak=False)
+      user_logged_in.connect(self.logged_in, weak=False, dispatch_uid="dsl-logged-in")
+      user_logged_out.connect(self.logged_out, weak=False, dispatch_uid="dsl-logged-out")
+      user_login_failed.connect(self.login_failed, weak=False, dispatch_uid="dsl-logged-failed")
       self.started = True
     return self
 
   def disconnect(self):
     if self.started:
-      user_logged_in.disconnect(self.logged_in)
-      user_logged_out.disconnect(self.logged_out)
-      user_login_failed.disconnect(self.login_failed)
+      user_logged_in.disconnect(self.logged_in, weak=False, dispatch_uid="dsl-logged-in")
+      user_logged_out.disconnect(self.logged_out, weak=False, dispatch_uid="dsl-logged-out")
+      user_login_failed.disconnect(self.login_failed, weak=False, dispatch_uid="dsl-logged-failed")
       self.started = False
     return self
 
@@ -96,23 +96,25 @@ class LoginEventPersistMonitor(LoginEventMonitor):
 
   def logged_in(self, sender, request, user, **kwargs):
     SystemEventModel.objects.create(
-      type="logged_in",
+      type=SystemEventModel.TYPES.logged_in,
       user_pk=user.id,
+      user_class="{0._meta.app_label}.{0.__class__.__name__}".format(user),
       request_info=request_info(request),
     )
     super(LoginEventPersistMonitor, self).logged_in(sender, request, user, **kwargs)
 
   def logged_out(self, sender, request, user, **kwargs):
     SystemEventModel.objects.create(
-      type="logged_out",
+      type=SystemEventModel.TYPES.logged_out,
       user_pk=user.id,
+      user_class="{0._meta.app_label}.{0.__class__.__name__}".format(user),
       request_info=request_info(request),
     )
     super(LoginEventPersistMonitor, self).logged_out(sender, request, user, **kwargs)
 
   def login_failed(self, sender, credentials, **kwargs):
     SystemEventModel.objects.create(
-      type="login_failed",
+      type=SystemEventModel.TYPES.login_failed,
       other_info=json.dumps(credentials)
     )
     super(LoginEventPersistMonitor, self).login_failed(sender, credentials, **kwargs)

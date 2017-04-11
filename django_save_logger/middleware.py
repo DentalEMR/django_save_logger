@@ -45,8 +45,9 @@ class ApiCallEventPersistMiddleware(ApiCallEventMiddleware):
   # def process_request(self, request):
   #   ret = super(ApiCallEventPersistMiddleware, self).process_request(request)
   #   SystemEventModel.objects.create(
-  #     type="request",
+  #     type=SystemEventModel.TYPES.request,
   #     user_pk=request.user.id,
+  #     user_class="{0._meta.app_label}.{0.__class__.__name__}".format(request.user),
   #     request_info=request_info(request),
   #   )
   #   return ret
@@ -54,8 +55,9 @@ class ApiCallEventPersistMiddleware(ApiCallEventMiddleware):
   def process_response(self, request, response):
     ret = super(ApiCallEventPersistMiddleware, self).process_response(request, response)
     SystemEventModel.objects.create(
-      type="response",
+      type=SystemEventModel.TYPES.response,
       user_pk=request.user.id,
+      user_class="{0._meta.app_label}.{0.__class__.__name__}".format(request.user),
       request_info=request_info(request),
       other_info=response_info(response)
     )
@@ -64,8 +66,9 @@ class ApiCallEventPersistMiddleware(ApiCallEventMiddleware):
   # def process_exception(self, request, exception):
   #   ret = super(ApiCallEventPersistMiddleware, self).process_exception(request, exception)
   #   SystemEventModel.objects.create(
-  #     type="response_exception",
+  #     type=SystemEventModel.TYPES.response_exception,
   #     user_pk=request.user.id,
+  #     user_class="{0._meta.app_label}.{0.__class__.__name__}".format(request.user),
   #     request_info=request_info(request),
   #     other_info=exception_info(exception)
   #   )
