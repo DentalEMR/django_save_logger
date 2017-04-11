@@ -104,17 +104,18 @@ class LoginEventPersistMonitor(LoginEventMonitor):
     super(LoginEventPersistMonitor, self).logged_in(sender, request, user, **kwargs)
 
   def logged_out(self, sender, request, user, **kwargs):
-    event_kwargs = dict(
-      type=SystemEventModel.TYPES.logged_out,
-      user_pk=user.id,
-      user_class="{0._meta.app_label}.{0.__class__.__name__}".format(user),
-      request_info=request_info(request),
-      other_info=kwargs.get("other_info", {})
-    )
-    if "created_at" in kwargs:
-      event_kwargs.update(created_at=kwargs.get("created_at"))
-    SystemEventModel.objects.create(**event_kwargs)
-    super(LoginEventPersistMonitor, self).logged_out(sender, request, user, **kwargs)
+    if user.is_authenticated():
+      event_kwargs = dict(
+        type=SystemEventModel.TYPES.logged_out,
+        user_pk=user.id,
+        user_class="{0._meta.app_label}.{0.__class__.__name__}".format(user),
+        request_info=request_info(request),
+        other_info=kwargs.get("other_info", {})
+      )
+      if "created_at" in kwargs:
+        event_kwargs.update(created_at=kwargs.get("created_at"))
+      SystemEventModel.objects.create(**event_kwargs)
+      super(LoginEventPersistMonitor, self).logged_out(sender, request, user, **kwargs)
 
   def login_failed(self, sender, credentials, **kwargs):
     SystemEventModel.objects.create(

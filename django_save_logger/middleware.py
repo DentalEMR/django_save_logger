@@ -54,10 +54,14 @@ class ApiCallEventPersistMiddleware(ApiCallEventMiddleware):
 
   def process_response(self, request, response):
     ret = super(ApiCallEventPersistMiddleware, self).process_response(request, response)
+    if request.user.is_authenticated():
+      user_class = "{0._meta.app_label}.{0.__class__.__name__}".format(request.user)
+    else:
+      user_class = "AnonymousUser"
     SystemEventModel.objects.create(
       type=SystemEventModel.TYPES.response,
       user_pk=request.user.id,
-      user_class="{0._meta.app_label}.{0.__class__.__name__}".format(request.user),
+      user_class=user_class,
       request_info=request_info(request),
       other_info=response_info(response)
     )
