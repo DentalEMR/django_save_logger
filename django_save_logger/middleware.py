@@ -21,7 +21,7 @@ class ApiCallEventMiddleware(object):
     logger.info(
       format_log_message(
         "response",
-        request.user,
+        getattr(request, 'user', None),
         request_info(request),
         response_info(response)
       )
@@ -54,7 +54,7 @@ class ApiCallEventPersistMiddleware(ApiCallEventMiddleware):
 
   def process_response(self, request, response):
     ret = super(ApiCallEventPersistMiddleware, self).process_response(request, response)
-    if request.user and request.user.is_authenticated():
+    if hasattr(request, 'user') and request.user.is_authenticated():
       user_class = "{0._meta.app_label}.{0.__class__.__name__}".format(request.user)
       user_pk = request.user.id
     else:

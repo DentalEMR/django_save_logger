@@ -16,7 +16,6 @@ def format_log_message(type, user, request_info, other_info):
     type,
     getattr(user, "pk", "<no user>"),
     getattr(user, "username", "<no user>"),
-    user.username,
     request_info,
     other_info
   )
