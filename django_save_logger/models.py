@@ -17,7 +17,7 @@ class SystemEventModel(models.Model):
 
   created_at = models.DateTimeField(default=timezone.now, blank=True)
   type = models.PositiveSmallIntegerField(choices=TYPES)
-  user_pk = models.IntegerField(blank=True, null=True, db_index=True)
+  user_id = models.IntegerField(blank=True, null=True, db_index=True)
   user_class = models.CharField(max_length=50, db_index=True)
   request_info = models.TextField()
   other_info = models.TextField(null=True, blank=True)

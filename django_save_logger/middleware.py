@@ -46,7 +46,7 @@ class ApiCallEventPersistMiddleware(ApiCallEventMiddleware):
   #   ret = super(ApiCallEventPersistMiddleware, self).process_request(request)
   #   SystemEventModel.objects.create(
   #     type=SystemEventModel.TYPES.request,
-  #     user_pk=request.user.id,
+  #     user_id=request.user.id,
   #     user_class="{0._meta.app_label}.{0.__class__.__name__}".format(request.user),
   #     request_info=request_info(request),
   #   )
@@ -56,14 +56,14 @@ class ApiCallEventPersistMiddleware(ApiCallEventMiddleware):
     ret = super(ApiCallEventPersistMiddleware, self).process_response(request, response)
     if hasattr(request, 'user') and request.user.is_authenticated():
       user_class = "{0._meta.app_label}.{0.__class__.__name__}".format(request.user)
-      user_pk = request.user.id
+      user_id = request.user.id
     else:
       user_class = "AnonymousUser"
-      user_pk = None
+      user_id = None
 
     SystemEventModel.objects.create(
       type=SystemEventModel.TYPES.response,
-      user_pk=user_pk,
+      user_id=user_id,
       user_class=user_class,
       request_info=request_info(request),
       other_info=response_info(response)
@@ -74,7 +74,7 @@ class ApiCallEventPersistMiddleware(ApiCallEventMiddleware):
   #   ret = super(ApiCallEventPersistMiddleware, self).process_exception(request, exception)
   #   SystemEventModel.objects.create(
   #     type=SystemEventModel.TYPES.response_exception,
-  #     user_pk=request.user.id,
+  #     user_id=request.user.id,
   #     user_class="{0._meta.app_label}.{0.__class__.__name__}".format(request.user),
   #     request_info=request_info(request),
   #     other_info=exception_info(exception)

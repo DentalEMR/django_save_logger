@@ -258,13 +258,13 @@ class LoginEventPersistMonitorTests(TestCase):
       self.assertIsInstance(login_events[0], SystemEventModel)
       self.assertEqual(login_events[0].type, 'logged_in')
       self.assertEqual(
-        User.objects.get(pk = login_events[0].user_pk).username, 
+        User.objects.get(pk = login_events[0].user_id).username, 
         'billy'
       )
       self.assertIsInstance(login_events[1], SystemEventModel)
       self.assertEqual(login_events[1].type, 'logged_out')
       self.assertEqual(
-        User.objects.get(pk = login_events[1].user_pk).username,
+        User.objects.get(pk = login_events[1].user_id).username,
         'billy'
       )
       self.assertEqual(
@@ -293,13 +293,13 @@ class LoginEventPersistMonitorTests(TestCase):
       self.assertIsInstance(login_events[0], SystemEventModel)
       self.assertEqual(login_events[0].type, 'logged_in')
       self.assertEqual(
-        User.objects.get(pk = login_events[0].user_pk).username, 
+        User.objects.get(pk = login_events[0].user_id).username, 
         'billy'
       )
       self.assertIsInstance(login_events[1], SystemEventModel)
       self.assertEqual(login_events[1].type, 'logged_out')
       self.assertEqual(
-        User.objects.get(pk = login_events[1].user_pk).username,
+        User.objects.get(pk = login_events[1].user_id).username,
         'billy'
       )
       self.assertEqual(
@@ -315,7 +315,7 @@ class LoginEventPersistMonitorTests(TestCase):
       self.assertIsNone(user)
       login_events = SystemEventModel.objects.all()
       self.assertEqual(login_events.count(), 1)
-      self.assertIsNone(login_events[0].user_pk)
+      self.assertIsNone(login_events[0].user_id)
       self.assertEqual(login_events[0].other_info,
         '{"username": "jimmy", "password": "********************"}'
       )

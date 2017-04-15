@@ -96,7 +96,7 @@ class LoginEventPersistMonitor(LoginEventMonitor):
   def logged_in(self, sender, request, user, **kwargs):
     SystemEventModel.objects.create(
       type=SystemEventModel.TYPES.logged_in,
-      user_pk=user.id,
+      user_id=user.id,
       user_class="{0._meta.app_label}.{0.__class__.__name__}".format(user),
       request_info=request_info(request),
     )
@@ -106,7 +106,7 @@ class LoginEventPersistMonitor(LoginEventMonitor):
     if user.is_authenticated():
       event_kwargs = dict(
         type=SystemEventModel.TYPES.logged_out,
-        user_pk=user.id,
+        user_id=user.id,
         user_class="{0._meta.app_label}.{0.__class__.__name__}".format(user),
         request_info=request_info(request),
         other_info=kwargs.get("other_info", {})
