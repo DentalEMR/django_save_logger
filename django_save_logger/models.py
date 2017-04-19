@@ -24,5 +24,5 @@ class SystemEventModel(models.Model):
 
   class Meta:
     ordering = (
-      "created_at",
+      "-created_at",
     )
