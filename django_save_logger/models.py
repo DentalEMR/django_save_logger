@@ -7,12 +7,12 @@ from model_utils import Choices
 class SystemEventModel(models.Model):
 
   TYPES = Choices(
-    (100, "request", "request"),
-    (101, "response", "response"),
-    (102, "response_exception", "response_exception"),
-    (200, "logged_in", "logged_in"),
-    (201, "logged_out", "logged_out"),
-    (202, "login_failed", "login_failed"),
+    (100, "request", "API Request"),
+    (101, "response", "API Response"),
+    (102, "response_exception", "Error"),
+    (200, "logged_in", "Sign in"),
+    (201, "logged_out", "Sign out"),
+    (202, "login_failed", "Failed Login"),
   )
 
   created_at = models.DateTimeField(default=timezone.now, blank=True)
