@@ -103,7 +103,7 @@ class LoginEventPersistMonitor(LoginEventMonitor):
     super(LoginEventPersistMonitor, self).logged_in(sender, request, user, **kwargs)
 
   def logged_out(self, sender, request, user, **kwargs):
-    if user.is_authenticated():
+    if user and user.is_authenticated():
       event_kwargs = dict(
         type=SystemEventModel.TYPES.logged_out,
         user_id=user.id,
