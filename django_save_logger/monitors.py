@@ -31,6 +31,7 @@ def request_info(request):
     "HTTP_X_FORWARDED": request.META.get("HTTP_X_FORWARDED", ""),
     "HTTP_FORWARDED_FOR": request.META.get("HTTP_FORWARDED_FOR", ""),
     "HTTP_FORWARDED": request.META.get("HTTP_FORWARDED", ""),
+    "HTTP_X_REAL_IP": request.META.get("HTTP_X_REAL_IP", ""),
   })
 
 
