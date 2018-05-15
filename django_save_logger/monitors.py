@@ -24,7 +24,7 @@ def format_log_message(type, user, request_info, other_info):
 def request_info(request):
   return json.dumps({
     "method": request.method,
-    "path": request.path,
+    "path": request.get_full_path(),
     "REMOTE_ADDR": request.META.get("REMOTE_ADDR", ""),
     "HTTP_USER_AGENT": request.META.get("HTTP_USER_AGENT", ""),
     "HTTP_CLIENT_IP": request.META.get("HTTP_CLIENT_IP", ""),
