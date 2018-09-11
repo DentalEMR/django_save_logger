@@ -1,9 +1,11 @@
+
 from django.db import models
 from django.utils import timezone
-
+from django.utils.encoding import python_2_unicode_compatible
 from model_utils import Choices
 
 
+@python_2_unicode_compatible
 class SystemEventModel(models.Model):
 
   TYPES = Choices(
@@ -23,6 +25,11 @@ class SystemEventModel(models.Model):
   other_info = models.TextField(null=True, blank=True)
 
   class Meta:
-    ordering = (
-      "-created_at",
-    )
+    ordering = ("-created_at",)
+
+  @property
+  def type_display(self):
+    return self.get_type_display()
+
+  def __str__(self):
+    return "SystemEventModel({0.id}, {0.created_at}, {0.user_class}/{0.user_id}, {0.type_display})".format(self)
