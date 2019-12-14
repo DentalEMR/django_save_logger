@@ -21,7 +21,7 @@ setup(
   install_requires=[
     "pymongo",
     "boto",
-    "django-model-utils",
+    "django-model-utils==3.2.0",
   ],
   long_description=read("README.rst"),
   classifiers=[
