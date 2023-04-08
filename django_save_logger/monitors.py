@@ -43,7 +43,7 @@ def response_info(response):
 
 def exception_info(exception):
   return json.dumps({
-    "exception": format_exc(exception)
+    "exception": str(exception)
   })
 
 
