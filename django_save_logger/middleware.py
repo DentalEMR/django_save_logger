@@ -65,6 +65,7 @@ class ApiCallEventPersistMiddleware(ApiCallEventMiddleware):
       type=SystemEventModel.TYPES.response,
       user_id=user_id,
       user_class=user_class,
+      api_endpoint=request.path,
       request_info=request_info(request),
       other_info=response_info(response)
     )
